@@ -18,4 +18,6 @@ var mem_set(T *value, u8 byte) -> void {
     }
 }
 
-
+var align_up(usize n, usize align) -> usize {
+    return (n + align - 1) & ~(align - 1);
+}

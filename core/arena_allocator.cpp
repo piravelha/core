@@ -2,6 +2,7 @@
 
 #include "helpers.cpp"
 #include "allocator.cpp"
+#include "mem.cpp"
 
 #define ARENA_SIZE (8 * 1024)
 
@@ -13,7 +14,7 @@ struct ArenaAllocator {
     operator Allocator() { return this; }
 };
 
-var init(ArenaAllocator *a, Allocator base) -> Result<void> {
+var init(ArenaAllocator *a, Allocator base) -> Result<void, AllocationError> {
     from (*a) use (memory, used);
 
     a->base = base;

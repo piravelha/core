@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include "os_alloc.cpp"
+
 #include "helpers.cpp"
 #include "basic.cpp"
 #include "debug_print.cpp"
@@ -9,9 +11,6 @@
 
 #define NAI_HEAP_SIZE (1024 * 4096)
 
-var align_up(usize n, usize align) -> usize {
-    return (n + align - 1) & ~(align - 1);
-}
 
 struct PageAllocator {
     struct Block {
@@ -32,7 +31,7 @@ var init(PageAllocator *a) -> void {
     from (*a) use (heap, free_list);
     using Block = PageAllocator::Block;
 
-    heap = (u8 *)mmap(NULL, NAI_HEAP_SIZE, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    heap = (u8 *)os_alloc(NAI_HEAP_SIZE);
 
     if (!heap) {
         debug_panic("Failed to allocate heap");
@@ -51,7 +50,7 @@ var deinit(PageAllocator *a) -> void {
         debug_panic("Attempting to deinit with null heap");
     }
 
-    munmap(heap, NAI_HEAP_SIZE);
+    os_free(heap, NAI_HEAP_SIZE);
     mem_set(a, 0);
 }
 

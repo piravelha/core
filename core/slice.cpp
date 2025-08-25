@@ -19,8 +19,8 @@ struct Slice {
 
 template <typename T>
 struct Slice<const T> {
-    T *data = NULL;
-    usize count = 0;
+    T *data;
+    usize count;
 
     Slice() {}
     Slice(T *d, usize c) : data(d), count(c) {}
@@ -42,6 +42,5 @@ struct Slice<const u8> {
 
     const u8 &operator[](usize i) { assert(i < count); return data[i]; }
 };
-
 
 Slice(const char *) -> Slice<const u8>;

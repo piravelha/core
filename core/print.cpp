@@ -8,14 +8,14 @@
 
 // TODO: strlit instead of const char *?
 
-var alloc_print_string(Allocator a, Slice<const u8> s) -> Result<Slice<u8>> {
+var alloc_print_string(Allocator a, Slice<const u8> s) -> Result<Slice<u8>, AllocationError> {
     try (var buf in alloc<u8>(a, s.count));
     mem_copy(xx buf.data, xx s.data, s.count);
 
     return buf;
 }
 
-var alloc_print_unsigned_int(Allocator a, u64 n) -> Result<Slice<u8>> {
+var alloc_print_unsigned_int(Allocator a, u64 n) -> Result<Slice<u8>, AllocationError> {
     usize i = 0;
 
     var len = usize(1);
@@ -41,7 +41,7 @@ var alloc_print_unsigned_int(Allocator a, u64 n) -> Result<Slice<u8>> {
     return buf;
 }
 
-var alloc_print_signed_int(Allocator a, s64 n) -> Result<Slice<u8>> {
+var alloc_print_signed_int(Allocator a, s64 n) -> Result<Slice<u8>, AllocationError> {
     usize i = 0;
     usize len = 0;
 
@@ -79,12 +79,12 @@ var alloc_print_signed_int(Allocator a, s64 n) -> Result<Slice<u8>> {
     return buf;
 }
 
-var alloc_print(Allocator a, const char *fmt) -> Result<Slice<u8>> {
+var alloc_print(Allocator a, const char *fmt) -> Result<Slice<u8>, AllocationError> {
     return alloc_print_string(a, {fmt});
 }
 
 template <typename First, typename... Rest>
-var alloc_print(Allocator a, const char *fmt, First first, Rest... rest) -> Result<Slice<u8>> {
+var alloc_print(Allocator a, const char *fmt, First first, Rest... rest) -> Result<Slice<u8>, AllocationError> {
     var begin = fmt;
     var end = fmt;
 
@@ -98,7 +98,7 @@ var alloc_print(Allocator a, const char *fmt, First first, Rest... rest) -> Resu
                 EqualTypes<First, Slice<u8>>::value ||
                 EqualTypes<First, Slice<const u8>>::value)
             {
-                try (buf in alloc_print_string(a, {first}));
+                try (buf in alloc_print_string(a, Slice<const u8>{first}));
             } else if constexpr (
                 EqualTypes<First, u8>::value ||
                 EqualTypes<First, u16>::value ||

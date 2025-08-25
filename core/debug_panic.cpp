@@ -1,7 +1,12 @@
 #pragma once
 
+#include <stdio.h>
+#include "helpers.cpp"
 
+
+#ifdef __clang__
 __attribute__((noreturn))
+#endif
 var debug_panic_(const char *file, int line, const char *msg) -> void {
 #ifdef DEBUG
     printf("DEBUG PANIC at %s:%d: %s\n", file, line, msg);
@@ -10,3 +15,9 @@ var debug_panic_(const char *file, int line, const char *msg) -> void {
 }
 
 #define debug_panic(msg) debug_panic_(__FILE__, __LINE__, msg)
+
+var debug_abort() -> void {
+#ifdef DEBUG
+    abort();
+#endif
+}

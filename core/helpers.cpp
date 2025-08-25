@@ -1,9 +1,7 @@
 #pragma once
 
-#include <unistd.h>
+
 #include <stdlib.h>
-#include <sys/syscall.h>
-#include <sys/mman.h>
 #include <assert.h>
 
 #define var auto
@@ -95,13 +93,13 @@
 #define catches(n) ,,, n,
 #define catch ,,
 
-#define _unwrap(v, r) assert((r).ok && "Unwrap failed"); v = (r).value
+#define _unwrap(v, r) ((r).ok ? (void)0 : debug_panic("Unwrap failed")); v = (r).value
 #define unwrap(...) _unwrap(__VA_ARGS__)
 
 #define global_run(...) static struct _paste(__run_, __LINE__) { _paste(__run_, __LINE__)() { __VA_ARGS__; }} _paste(__run_val_, __LINE__){}
 
 
-#define defer(...) auto _paste(__defer_, __LINE__) = _defer([&](){ __VA_ARGS__; })
+#define defer(...) auto _paste(__defer_, __LINE__) = _defer([=]() mutable { __VA_ARGS__; })
 
 #define derive_repr(T) void sprint(String *str, T t) { \
     sprint(str, #T); \
@@ -156,136 +154,6 @@ struct _defer {
 template <typename F>
 _defer(F &&) -> _defer<F>;
 
-template <typename R>
-struct Error {
-    R fn;
-    Error(R r) : fn(r) {}
-};
-
-template <>
-struct Error<void> {
-    Error() {}
-};
-
-Error() -> Error<void>;
-
-template <typename T, typename R = void>
-struct [[nodiscard]] Result {
-    union {
-        T value;
-        R print;
-    };
-
-    bool ok;
-
-    Result() {}
-    Result(T t) {
-        value = t;
-        ok = true;
-    }
-
-    Result(Error<R> e) {
-        print = e.fn;
-        ok = false;
-    }
-
-    operator bool() { return ok; }
-
-    Result<void, R> _to_void() { return *this; }
-};
-
-template <>
-struct [[nodiscard]] Result<void, void> {
-    static constexpr bool value = false;
-
-    bool ok;
-
-    Result() { ok = true; }
-
-    template <typename T>
-    Result(Result<T, void> r)
-    {
-        ok = r.ok;
-    }
-
-    template <typename T>
-    operator Result<T, void>()
-    {
-        Result<T, void> r;
-        r.ok = ok;
-        return r;
-    }
-
-    comptime print = 0;
-
-    Result(Error<void>) {
-        ok = false;
-    }
-
-    operator bool() { return ok; }
-
-    Result<void, void> _to_void() { return *this; }
-};
-
-template <typename T>
-struct [[nodiscard]] Result<T, void> {
-    T value;
-    bool ok;
-
-    Result() {}
-    Result(T t) {
-        value = t;
-        ok = true;
-    }
-
-    comptime print = 0;
-
-    Result(Error<void>) {
-        ok = false;
-    }
-
-    operator bool() { return ok; }
-
-    Result<void, void> _to_void() { return *this; }
-};
-
-
-template <typename R>
-struct [[nodiscard]] Result<void, R> {
-    union {
-        R print;
-    };
-    static constexpr bool value = false;
-
-    bool ok;
-
-    Result() { ok = true; }
-
-    template <typename T>
-    Result(Result<T, R> r)
-    {
-        ok = r.ok;
-        print = r.print;
-    }
-
-    template <typename T>
-    operator Result<T, R>()
-    {
-        Result<T, R> r;
-        r.ok = ok;
-        r.print = print;
-        return r;
-    }
-
-    Result(Error<R> e) {
-        print = e.fn;
-        ok = false;
-    }
-
-    operator bool() { return ok; }
-
-    Result<void, R> _to_void() { return *this; }
-};
 
 template <typename A, typename B>
 struct EqualTypes {
@@ -324,40 +192,3 @@ bool _streq(const char *a, const char *b, size_t len) {
     return true;
 }
 
-long syscall(long number,
-             long arg1, long arg2, long arg3,
-             long arg4, long arg5, long arg6)
-{
-    register long x0 __asm__("x0") = arg1;
-    register long x1 __asm__("x1") = arg2;
-    register long x2 __asm__("x2") = arg3;
-    register long x3 __asm__("x3") = arg4;
-    register long x4 __asm__("x4") = arg5;
-    register long x5 __asm__("x5") = arg6;
-    register long x8 __asm__("x8") = number;
-
-    __asm__ volatile(
-        "svc #0"
-        : "+r"(x0)        // result is returned in x0
-        : "r"(x1), "r"(x2), "r"(x3), "r"(x4), "r"(x5), "r"(x8)
-        : "memory"
-    );
-
-    return x0;
-}
-
-#define SIGABRT 6
-
-
-// TODO: argc, argv
-var entry() -> Result<void>;
-
-
-var main() -> int {
-    try (entry() catch {
-        assert(0 && "TODO: log error here\n");
-    });
-
-    exit(0);
-    return 0;
-}

@@ -2,6 +2,8 @@
 
 #include "helpers.cpp"
 #include "mem.cpp"
+#include "result.cpp"
+#include "slice.cpp"
 
 
 struct Allocator {
@@ -23,8 +25,10 @@ struct Allocator {
     }
 };
 
+struct AllocationError {};
+
 template <typename T>
-var alloc(Allocator a, usize count = 1) -> Result<Slice<T>> {
+var alloc(Allocator a, usize count = 1) -> Result<Slice<T>, AllocationError> {
     from (a) use (alloc_fn, data);
 
     var ptr = alloc_fn(data, sizeof(T) * count, alignof(T));
@@ -41,7 +45,7 @@ var free(Allocator a, Slice<T> ptr) -> void {
 
 
 template <typename T>
-var dupe(Allocator a, Slice<const T> value) -> Result<Slice<T>> {
+var dupe(Allocator a, Slice<const T> value) -> Result<Slice<T>, AllocationError> {
     try (var copy in alloc<T>(a, value.count));
     mem_copy(xx copy.data, xx value.data, sizeof(T) * value.count);
     return copy;
