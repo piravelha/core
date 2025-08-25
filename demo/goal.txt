@@ -1,0 +1,13 @@
+const std = @import("std");
+
+pub fn main() !void {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+
+    const allocator = arena.allocator();
+
+    const s1 = try allocator.dupe(u8, "first");
+    const s2 = try allocator.dupe(u8, "second");
+
+    std.debug.print("{s}, {s}\n", .{s1, s2});
+}

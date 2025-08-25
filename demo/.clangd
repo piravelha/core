@@ -1,0 +1,2 @@
+CompileFlags:
+  Add: ["-DDEBUG", "-Weverything", "-Wno-c++98-compat", "-Wno-padded", "-Wno-c++98-compat-pedantic", "-Wno-keyword-macro", "-Wno-reserved-identifier", "-Wno-old-style-cast", "-Wno-missing-prototypes", "-Wno-disabled-macro-expansion", "-Wno-unused-variable", "-Wno-cast-align", "-Wno-global-constructors", "-Wno-exit-time-destructors", "-Wno-unsafe-buffer-usage", "-I/data/data/com.termux/files/home/stuff/luna/core.cpp/", "-include core.cpp"]
